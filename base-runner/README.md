@@ -84,8 +84,8 @@ docker build \
 
 | Arg | Default | Description |
 |-----|---------|-------------|
-| `RUNNER_VERSION` | 2.319.1 | GitHub Actions runner version |
-| `NODE_MAJOR` | 20 | Node.js major version |
+| `RUNNER_VERSION` | 2.331.0 | GitHub Actions runner version |
+| `NODE_MAJOR` | 24 | Node.js major version |
 | `DOTNET_VERSION` | 10.0 | .NET SDK channel |
 
 ## 📁 File Structure

@@ -16,7 +16,7 @@ GitHub Actions self-hosted runner for **builds and tests** — no Docker depende
 
 Directly extends [base-runner](../base-runner/) with no additional tools:
 
-**Inherited from base-runner:** Node.js 20, .NET 10, gh CLI, dotnet-ef, js-yaml
+**Inherited from base-runner:** Node.js 24, .NET 10, gh CLI, dotnet-ef, js-yaml
 
 ## 🔐 Security
 

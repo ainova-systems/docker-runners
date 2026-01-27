@@ -60,9 +60,11 @@ RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh \
     && rm dotnet-install.sh \
     && ln -sf /usr/share/dotnet/dotnet /usr/bin/dotnet
 
-# Install .NET EF Core tools
-RUN dotnet tool install --global dotnet-ef
-ENV PATH="${PATH}:/root/.dotnet/tools"
+# Install .NET EF Core tools globally (accessible to all users)
+ENV DOTNET_TOOLS=/opt/dotnet-tools
+RUN mkdir -p ${DOTNET_TOOLS} \
+    && dotnet tool install --tool-path ${DOTNET_TOOLS} dotnet-ef
+ENV PATH="${PATH}:${DOTNET_TOOLS}"
 
 # Install js-yaml for YAML validation
 RUN npm install -g js-yaml

@@ -23,9 +23,12 @@ docker run -d --name ai-runner --restart unless-stopped \
   -e GITHUB_REPOSITORY_URL=https://github.com/your-org/your-repo \
   -e GITHUB_RUNNER_TOKEN=YOUR_TOKEN \
   -e ANTHROPIC_API_KEY=sk-ant-xxx \
+  -e CURSOR_API_KEY=xxx \
   -v ai-runner-data:/home/runner/actions-runner \
   ghcr.io/ainova-systems/docker-runners/ai-runner:latest
 ```
+
+> 💡 **AI Providers**: `ANTHROPIC_API_KEY` enables Claude CLI, `CURSOR_API_KEY` enables Cursor CLI. Both are optional but at least one is recommended.
 
 ### One-Line Deploy (CI/CD Runner)
 

@@ -21,7 +21,7 @@ Extends [base-runner](../base-runner/) with:
 | Docker CLI | Build and manage containers |
 | Docker Compose | Multi-container orchestration |
 
-**Inherited from base-runner:** Node.js 20, .NET 10, gh CLI, dotnet-ef
+**Inherited from base-runner:** Node.js 24, .NET 10, gh CLI, dotnet-ef
 
 ## 🚀 Quick Start
 

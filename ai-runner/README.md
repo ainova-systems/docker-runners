@@ -21,7 +21,7 @@ Extends [base-runner](../base-runner/) with:
 | Claude CLI | Anthropic AI code assistant |
 | Cursor CLI | Cursor AI agent |
 
-**Inherited from base-runner:** Node.js 20, .NET 10, gh CLI, dotnet-ef
+**Inherited from base-runner:** Node.js 24, .NET 10, gh CLI, dotnet-ef
 
 ## 🚀 Quick Start
 
@@ -32,6 +32,7 @@ docker run -d --name ai-runner --restart unless-stopped \
   -e GITHUB_REPOSITORY_URL=https://github.com/your-org/your-repo \
   -e GITHUB_RUNNER_TOKEN=YOUR_TOKEN \
   -e ANTHROPIC_API_KEY=sk-ant-xxx \
+  -e CURSOR_API_KEY=xxx \
   -v ai-runner-data:/home/runner/actions-runner \
   ghcr.io/ainova-systems/docker-runners/ai-runner:latest
 ```
