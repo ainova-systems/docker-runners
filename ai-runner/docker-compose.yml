@@ -1,0 +1,48 @@
+# AI Automation Runner - Docker Compose
+#
+# Local Development:
+#   1. Copy .env.example to .env and fill in values
+#   2. Run: docker compose up -d --build
+#
+# Production (use pre-built image):
+#   1. Comment out 'build:' section below
+#   2. Run: docker compose up -d
+
+services:
+  ai-runner:
+    # Build locally (comment out for production)
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BASE_IMAGE: ${BASE_IMAGE:-ghcr.io/ainova-systems/docker-runners/base-runner:latest}
+    # Pre-built image (uncomment for production)
+    # image: ghcr.io/ainova-systems/docker-runners/ai-runner:latest
+    image: ai-runner:local
+    container_name: ai-runner
+    restart: unless-stopped
+    environment:
+      # Required: GitHub repository URL
+      - GITHUB_REPOSITORY_URL=${GITHUB_REPOSITORY_URL}
+      # Required: Runner registration token (from GitHub Settings -> Actions -> Runners)
+      - GITHUB_RUNNER_TOKEN=${GITHUB_RUNNER_TOKEN}
+      # Authentication - Claude CLI (one of these is required for Claude)
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN:-}
+      # Authentication - Cursor CLI (optional, for Cursor provider)
+      - CURSOR_API_KEY=${CURSOR_API_KEY:-}
+      # Optional: Custom runner name and labels
+      - RUNNER_NAME=${RUNNER_NAME:-ai-runner}
+      - RUNNER_LABELS=${RUNNER_LABELS:-self-hosted,claude-cli,cursor-cli}
+    volumes:
+      # Persist entire runner directory (config + work)
+      - runner-data:/home/runner/actions-runner
+    networks:
+      - ai-runner-network
+
+volumes:
+  runner-data:
+
+networks:
+  ai-runner-network:
+    driver: bridge

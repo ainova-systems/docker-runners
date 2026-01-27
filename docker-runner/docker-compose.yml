@@ -1,0 +1,43 @@
+# Docker Runner - Docker Compose
+#
+# Local Development:
+#   1. Copy .env.example to .env and fill in values
+#   2. Run: docker compose up -d --build
+#
+# Production (use pre-built image):
+#   1. Comment out 'build:' section below
+#   2. Run: docker compose up -d
+
+services:
+  docker-runner:
+    # Build locally (comment out for production)
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BASE_IMAGE: ${BASE_IMAGE:-ghcr.io/ainova-systems/docker-runners/base-runner:latest}
+    # Pre-built image (uncomment for production)
+    # image: ghcr.io/ainova-systems/docker-runners/docker-runner:latest
+    image: docker-runner:local
+    container_name: ${RUNNER_NAME:-docker-runner}
+    restart: unless-stopped
+    environment:
+      - GITHUB_REPOSITORY_URL=${GITHUB_REPOSITORY_URL}
+      - GITHUB_RUNNER_TOKEN=${GITHUB_RUNNER_TOKEN}
+      - RUNNER_NAME=${RUNNER_NAME:-docker-runner}
+      - RUNNER_LABELS=${RUNNER_LABELS:-self-hosted,docker,dotnet,nodejs,docker}
+    volumes:
+      # Persist runner configuration
+      - runner-data:/home/runner/actions-runner
+      # Mount Docker socket for building/running containers
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - docker-runner-network
+
+volumes:
+  runner-data:
+
+networks:
+  docker-runner-network:
+    driver: bridge
+

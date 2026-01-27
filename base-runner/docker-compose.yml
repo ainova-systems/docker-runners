@@ -1,0 +1,33 @@
+# Base Runner - Docker Compose
+#
+# For testing base-runner directly.
+# Typically you'll use ai-runner or docker-runner instead.
+#
+# Usage:
+#   1. Copy this to .env: GITHUB_REPOSITORY_URL=... GITHUB_RUNNER_TOKEN=...
+#   2. Run: docker compose up -d --build
+
+services:
+  base-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        RUNNER_VERSION: ${RUNNER_VERSION:-2.319.1}
+        NODE_MAJOR: ${NODE_MAJOR:-20}
+        DOTNET_VERSION: ${DOTNET_VERSION:-10.0}
+    image: base-runner:local
+    container_name: ${RUNNER_NAME:-base-runner}
+    restart: unless-stopped
+    environment:
+      - GITHUB_REPOSITORY_URL=${GITHUB_REPOSITORY_URL}
+      - GITHUB_RUNNER_TOKEN=${GITHUB_RUNNER_TOKEN}
+      - RUNNER_NAME=${RUNNER_NAME:-base-runner}
+      - RUNNER_LABELS=${RUNNER_LABELS:-self-hosted,base}
+    volumes:
+      - runner-data:/home/runner/actions-runner
+
+volumes:
+  runner-data:
+
+

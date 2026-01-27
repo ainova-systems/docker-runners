@@ -1,0 +1,6 @@
+# Shell scripts must have LF line endings for Linux containers
+*.sh text eol=lf
+entrypoint.sh text eol=lf
+
+# Dockerfile can have either
+Dockerfile text eol=lf
