@@ -35,10 +35,10 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     outputs:
-      base-runner: ${{ steps.changes.outputs.base-runner || 'false' }}
-      ai-runner: ${{ steps.changes.outputs.ai-runner || 'false' }}
-      build-runner: ${{ steps.changes.outputs.build-runner || 'false' }}
-      docker-runner: ${{ steps.changes.outputs.docker-runner || 'false' }}
+      base-runner: ${{ steps.changes.outputs.base-runner || steps.changes.outputs.workflow || 'false' }}
+      ai-runner: ${{ steps.changes.outputs.ai-runner || steps.changes.outputs.workflow || 'false' }}
+      build-runner: ${{ steps.changes.outputs.build-runner || steps.changes.outputs.workflow || 'false' }}
+      docker-runner: ${{ steps.changes.outputs.docker-runner || steps.changes.outputs.workflow || 'false' }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -51,6 +51,8 @@ jobs:
       id: changes
       with:
         filters: |
+          workflow:
+            - '.github/workflows/build-runners.yml'
           base-runner:
             - 'base-runner/**'
           ai-runner:
@@ -74,7 +76,7 @@ jobs:
       packages: write
 
     outputs:
-      tags: ${{ steps.meta.outputs.tags }}
+      main_tag: ${{ steps.main_tag.outputs.tag }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -114,6 +116,9 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
+    - name: Extract main tag
+      id: main_tag
+      run: echo "tag=$(echo '${{ steps.meta.outputs.tags }}' | head -n1)" >> $GITHUB_OUTPUT
 
   summarize-images:
     name: Summarize Built Images
@@ -126,10 +131,10 @@ jobs:
           echo "## Images Built" >> $GITHUB_STEP_SUMMARY
           echo "| Image | Tags |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|------|" >> $GITHUB_STEP_SUMMARY
-          echo "| base-runner | ${{ needs.build-base-runner.outputs.tags || 'see job logs' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| ai-runner | ${{ needs.build-ai-runner.outputs.tags || 'see job logs' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| build-runner | ${{ needs.build-build-runner.outputs.tags || 'see job logs' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| docker-runner | ${{ needs.build-docker-runner.outputs.tags || 'see job logs' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| base-runner | ${{ needs.build-base-runner.outputs.main_tag || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ai-runner | ${{ needs.build-ai-runner.outputs.main_tag || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| build-runner | ${{ needs.build-build-runner.outputs.main_tag || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| docker-runner | ${{ needs.build-docker-runner.outputs.main_tag || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
   build-ai-runner:
     name: Build AI Runner
     runs-on: ubuntu-latest
@@ -146,7 +151,7 @@ jobs:
       packages: write
 
     outputs:
-      tags: ${{ steps.meta.outputs.tags }}
+      main_tag: ${{ steps.main_tag.outputs.tag }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -195,6 +200,10 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
+    - name: Extract main tag
+      id: main_tag
+      run: echo "tag=$(echo '${{ steps.meta.outputs.tags }}' | head -n1)" >> $GITHUB_OUTPUT
+
   build-build-runner:
     name: Build Build Runner
     runs-on: ubuntu-latest
@@ -211,7 +220,7 @@ jobs:
       packages: write
 
     outputs:
-      tags: ${{ steps.meta.outputs.tags }}
+      main_tag: ${{ steps.main_tag.outputs.tag }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -260,6 +269,10 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
+    - name: Extract main tag
+      id: main_tag
+      run: echo "tag=$(echo '${{ steps.meta.outputs.tags }}' | head -n1)" >> $GITHUB_OUTPUT
+
   build-docker-runner:
     name: Build Docker Runner
     runs-on: ubuntu-latest
@@ -276,7 +289,7 @@ jobs:
       packages: write
 
     outputs:
-      tags: ${{ steps.meta.outputs.tags }}
+      main_tag: ${{ steps.main_tag.outputs.tag }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -324,6 +337,10 @@ jobs:
           BASE_IMAGE=${{ env.IMAGE_PREFIX }}/base-runner:${{ steps.base-tag.outputs.tag }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+
+    - name: Extract main tag
+      id: main_tag
+      run: echo "tag=$(echo '${{ steps.meta.outputs.tags }}' | head -n1)" >> $GITHUB_OUTPUT
 
 
 
