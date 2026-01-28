@@ -15,7 +15,7 @@ export PATH="$PATH:/home/runner/.dotnet/tools:/root/.dotnet/tools:$HOME/.local/b
 # Validate required environment variables
 if [ -z "$GITHUB_REPOSITORY_URL" ]; then
     echo "ERROR: GITHUB_REPOSITORY_URL is required"
-    echo "Example: https://github.com/your-org/tomis-next"
+    echo "Example: https://github.com/your-org/your-repo"
     exit 1
 fi
 
@@ -29,32 +29,32 @@ fi
 
 # Check for authentication
 if [ -z "$ANTHROPIC_API_KEY" ] && [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
-    echo "WARNING: Neither ANTHROPIC_API_KEY nor CLAUDE_CODE_OAUTH_TOKEN is set"
-    echo "Claude CLI may not work properly without authentication"
+    echo "INFO: No Claude auth in container environment"
+    echo "      API keys provided via GitHub secrets (ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN)"
 fi
 
 # Export authentication for Claude CLI
 if [ -n "$ANTHROPIC_API_KEY" ]; then
     export ANTHROPIC_API_KEY
-    echo "Claude CLI: Using ANTHROPIC_API_KEY"
+    echo "Claude CLI: Using ANTHROPIC_API_KEY from container"
 elif [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
     export CLAUDE_CODE_OAUTH_TOKEN
-    echo "Claude CLI: Using CLAUDE_CODE_OAUTH_TOKEN"
+    echo "Claude CLI: Using CLAUDE_CODE_OAUTH_TOKEN from container"
 fi
 
 # Export authentication for Cursor CLI
 if [ -n "$CURSOR_API_KEY" ]; then
     export CURSOR_API_KEY
-    echo "Cursor CLI: Using CURSOR_API_KEY"
+    echo "Cursor CLI: Using CURSOR_API_KEY from container"
 else
-    echo "Cursor CLI: No API key set (optional)"
+    echo "Cursor CLI: No container API key (use GitHub secrets)"
 fi
 
 # Set runner name
-RUNNER_NAME=${RUNNER_NAME:-"tomis-ai-runner-$(hostname)"}
+RUNNER_NAME=${RUNNER_NAME:-"ai-runner-$(hostname)"}
 
 # Set runner labels
-LABELS=${RUNNER_LABELS:-"self-hosted,claude-cli,cursor-cli"}
+LABELS=${RUNNER_LABELS:-"self-hosted,claude-cli,cursor-agent"}
 
 echo ""
 echo "Configuration:"

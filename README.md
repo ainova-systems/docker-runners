@@ -22,13 +22,11 @@ Pre-built, production-ready **GitHub Actions self-hosted runners** in Docker con
 docker run -d --name ai-runner --restart unless-stopped \
   -e GITHUB_REPOSITORY_URL=https://github.com/your-org/your-repo \
   -e GITHUB_RUNNER_TOKEN=YOUR_TOKEN \
-  -e ANTHROPIC_API_KEY=sk-ant-xxx \
-  -e CURSOR_API_KEY=xxx \
   -v ai-runner-data:/home/runner/actions-runner \
   ghcr.io/ainova-systems/docker-runners/ai-runner:latest
 ```
 
-> 💡 **AI Providers**: `ANTHROPIC_API_KEY` enables Claude CLI, `CURSOR_API_KEY` enables Cursor CLI. Both are optional but at least one is recommended.
+> 💡 **API Keys**: Add `ANTHROPIC_API_KEY` (or `CLAUDE_CODE_OAUTH_TOKEN`) and `CURSOR_API_KEY` to GitHub repository secrets. See [AI Runner docs](ai-runner/README.md#-api-key-management).
 
 ### One-Line Deploy (CI/CD Runner)
 
@@ -163,6 +161,7 @@ We use a **single full-stack base image** pattern (similar to GitHub's official 
 | GitHub CLI | latest | PR operations |
 | dotnet-ef | latest | Database migrations |
 | js-yaml | latest | YAML validation |
+| ripgrep | latest | Fast code search |
 | GitHub Runner | 2.331.0 | Actions execution |
 
 ## 🔧 Build Args (Customizable)
@@ -191,7 +190,6 @@ docker-runners/
 │   ├── Dockerfile             # + Claude, Cursor CLI
 │   ├── entrypoint.sh          # + API key handling
 │   ├── docker-compose.yml     # Local development
-│   ├── setup.sh               # One-line deploy
 │   └── .env.example
 ├── build-runner/              # Builds & tests (no Docker socket)
 │   ├── Dockerfile             # Labels only, no extra deps
@@ -201,7 +199,6 @@ docker-runners/
 │   ├── Dockerfile             # + Docker CLI, Compose
 │   ├── entrypoint.sh
 │   ├── docker-compose.yml     # With Docker socket mount
-│   ├── setup.sh               # One-line deploy
 │   └── .env.example
 └── README.md
 ```
@@ -215,6 +212,25 @@ The CI pipeline builds images in dependency order:
 3. **build-runner changes** → Rebuild only build-runner
 4. **docker-runner changes** → Rebuild only docker-runner
 5. **Manual trigger** → Force rebuild all
+
+## 📋 Common Commands
+
+```bash
+# View logs
+docker logs <runner-name> -f
+
+# Stop runner
+docker stop <runner-name>
+
+# Restart runner
+docker restart <runner-name>
+
+# Remove container (keeps data volume)
+docker rm -f <runner-name>
+
+# Full reset (removes credentials, requires new token)
+docker rm -f <runner-name> && docker volume rm <runner-name>-data
+```
 
 ## 🤝 Contributing
 

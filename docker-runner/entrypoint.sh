@@ -3,13 +3,13 @@ set -e
 
 echo "=========================================="
 echo "Docker Runner v1.0"
-echo "Tech Stack: .NET 10, Node.js 20, Docker"
+echo "Tech Stack: .NET 10, Node.js 24, Docker"
 echo "=========================================="
 
 # Validate required environment variables
 if [ -z "$GITHUB_REPOSITORY_URL" ]; then
     echo "ERROR: GITHUB_REPOSITORY_URL is required"
-    echo "Example: https://github.com/your-org/tomis-next"
+    echo "Example: https://github.com/your-org/your-repo"
     exit 1
 fi
 
@@ -20,10 +20,10 @@ if [ -z "$GITHUB_RUNNER_TOKEN" ] && [ ! -f ".credentials" ]; then
 fi
 
 # Set runner name
-RUNNER_NAME=${RUNNER_NAME:-"tomis-docker-runner-$(hostname)"}
+RUNNER_NAME=${RUNNER_NAME:-"docker-runner-$(hostname)"}
 
 # Set runner labels
-LABELS=${RUNNER_LABELS:-"self-hosted,docker,dotnet,nodejs,docker"}
+LABELS=${RUNNER_LABELS:-"self-hosted,docker,dotnet,nodejs"}
 
 echo ""
 echo "Configuration:"

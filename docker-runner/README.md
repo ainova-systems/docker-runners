@@ -44,12 +44,6 @@ cp .env.example .env
 docker compose up -d
 ```
 
-### Option 3: Interactive Setup
-
-```bash
-curl -sSL https://raw.githubusercontent.com/ainova-systems/docker-runners/main/docker-runner/setup.sh | bash
-```
-
 ## ⚙️ Environment Variables
 
 | Variable | Required | Description |
@@ -128,26 +122,7 @@ USER runner
 ### Custom Labels
 
 ```bash
--e RUNNER_LABELS=self-hosted,docker,docker,kubernetes,production
-```
-
-## 📋 Commands
-
-```bash
-# View logs
-docker logs docker-runner -f
-
-# Stop
-docker stop docker-runner
-
-# Restart
-docker restart docker-runner
-
-# Remove (keeps data)
-docker rm -f docker-runner
-
-# Full reset (removes credentials)
-docker rm -f docker-runner && docker volume rm docker-runner-data
+-e RUNNER_LABELS=self-hosted,docker,kubernetes,production
 ```
 
 ## 🏗️ Local Development
@@ -175,7 +150,7 @@ on:
 
 jobs:
   build:
-    runs-on: [self-hosted, docker, docker]
+    runs-on: [self-hosted, docker]
     steps:
       - uses: actions/checkout@v4
       

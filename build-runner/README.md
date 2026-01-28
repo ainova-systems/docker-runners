@@ -78,22 +78,6 @@ Available labels:
 - `dotnet`
 - `nodejs`
 
-## 📋 Commands
-
-```bash
-# View logs
-docker logs build-runner -f
-
-# Stop
-docker stop build-runner
-
-# Remove (keeps data)
-docker rm -f build-runner
-
-# Full reset (removes credentials)
-docker rm -f build-runner && docker volume rm build-runner-data
-```
-
 ## 🆚 build-runner vs docker-runner
 
 | Feature | build-runner | docker-runner |

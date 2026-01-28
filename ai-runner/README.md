@@ -25,19 +25,30 @@ Extends [base-runner](../base-runner/) with:
 
 ## 🚀 Quick Start
 
-### Option 1: Docker Run
+### Step 1: Add GitHub Secrets
+
+```bash
+# Claude CLI - choose one:
+gh secret set ANTHROPIC_API_KEY        # Option A: API key
+gh secret set CLAUDE_CODE_OAUTH_TOKEN  # Option B: OAuth token (Pro/Max users)
+
+# Cursor CLI:
+gh secret set CURSOR_API_KEY
+```
+
+### Step 2: Deploy Runner
+
+**Option A: Docker Run**
 
 ```bash
 docker run -d --name ai-runner --restart unless-stopped \
   -e GITHUB_REPOSITORY_URL=https://github.com/your-org/your-repo \
   -e GITHUB_RUNNER_TOKEN=YOUR_TOKEN \
-  -e ANTHROPIC_API_KEY=sk-ant-xxx \
-  -e CURSOR_API_KEY=xxx \
   -v ai-runner-data:/home/runner/actions-runner \
   ghcr.io/ainova-systems/docker-runners/ai-runner:latest
 ```
 
-### Option 2: Docker Compose
+**Option B: Docker Compose**
 
 ```bash
 cp .env.example .env
@@ -45,26 +56,32 @@ cp .env.example .env
 docker compose up -d
 ```
 
-### Option 3: Interactive Setup
-
-```bash
-curl -sSL https://raw.githubusercontent.com/ainova-systems/docker-runners/main/ai-runner/setup.sh | bash
-```
-
 ## ⚙️ Environment Variables
+
+### Container Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `GITHUB_REPOSITORY_URL` | ✅ | Full repository URL |
 | `GITHUB_RUNNER_TOKEN` | ✅* | Runner registration token |
-| `ANTHROPIC_API_KEY` | ✅** | Claude API key |
-| `CLAUDE_CODE_OAUTH_TOKEN` | ✅** | OAuth token (alternative) |
-| `CURSOR_API_KEY` | ❌ | Cursor CLI API key |
-| `RUNNER_NAME` | ❌ | Custom runner name |
-| `RUNNER_LABELS` | ❌ | Default: `self-hosted,claude-cli,cursor-agent` |
+| `RUNNER_NAME` | ⚪ | Custom runner name |
+| `RUNNER_LABELS` | ⚪ | Default: `self-hosted,claude-cli,cursor-agent` |
 
-*Only required for initial setup  
-**One of `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` required
+*Only required for initial setup (persisted in volume)
+
+### GitHub Repository Secrets (Required)
+
+| Secret | Required | Description |
+|--------|----------|-------------|
+| `ANTHROPIC_API_KEY` | ✅* | Claude API key from [Anthropic Console](https://console.anthropic.com/) |
+| `CLAUDE_CODE_OAUTH_TOKEN` | ✅* | Claude OAuth token (alternative to API key) |
+| `CURSOR_API_KEY` | ✅ | Cursor CLI API key |
+
+*One of `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` required for Claude CLI
+
+### Alternative: Container API Keys (Not Recommended)
+
+For local dev only, you can pass API keys to container. See [API Key Management](#-api-key-management).
 
 ## 🏷️ Runner Labels
 
@@ -111,30 +128,27 @@ USER runner
 -e RUNNER_LABELS=self-hosted,claude-cli,cursor-agent,my-custom-label
 ```
 
-## 📋 Commands
+## 🔐 API Key Management
 
-```bash
-# View logs
-docker logs ai-runner -f
+| Approach | When to Use | Setup |
+|----------|-------------|-------|
+| **GitHub Secrets** (Recommended) | Production | `gh secret set ANTHROPIC_API_KEY` |
+| **Container Env Vars** | Local dev only | `-e ANTHROPIC_API_KEY=sk-ant-xxx` |
 
-# Stop
-docker stop ai-runner
+**GitHub Secrets** — keys are encrypted, audited, easy to rotate. Inject in workflow:
 
-# Restart
-docker restart ai-runner
-
-# Remove (keeps data)
-docker rm -f ai-runner
-
-# Full reset (removes credentials)
-docker rm -f ai-runner && docker volume rm ai-runner-data
+```yaml
+env:
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
 ```
+
+**Container Env Vars** — simpler but less secure (keys visible in `docker inspect`).
 
 ## 🔐 Security Notes
 
-- API keys are passed as environment variables at runtime
-- No secrets are baked into the image
-- Credentials persist in the Docker volume after first setup
+- No secrets baked into image
+- Runner credentials persist in volume after first setup
 - Runner token only needed for initial registration
 
 ## 🏗️ Local Development
