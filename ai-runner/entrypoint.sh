@@ -8,10 +8,6 @@ echo "=========================================="
 echo "AI Automation Runner v1.1"
 echo "=========================================="
 
-# Add dotnet tools and Cursor CLI to PATH
-# Cursor CLI installs to ~/.local/bin per https://cursor.com/docs/cli/github-actions
-export PATH="$PATH:/home/runner/.dotnet/tools:/root/.dotnet/tools:$HOME/.local/bin"
-
 # Validate required environment variables
 if [ -z "$GITHUB_REPOSITORY_URL" ]; then
     echo "ERROR: GITHUB_REPOSITORY_URL is required"

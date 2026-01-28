@@ -5,9 +5,6 @@ echo "=========================================="
 echo "GitHub Actions Self-Hosted Runner"
 echo "=========================================="
 
-# Add dotnet tools to PATH
-export PATH="$PATH:/home/runner/.dotnet/tools:/root/.dotnet/tools"
-
 # Validate required environment variables
 if [ -z "$GITHUB_REPOSITORY_URL" ]; then
     echo "ERROR: GITHUB_REPOSITORY_URL is required"

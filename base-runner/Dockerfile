@@ -64,7 +64,7 @@ RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh \
 ENV DOTNET_TOOLS=/opt/dotnet-tools
 RUN mkdir -p ${DOTNET_TOOLS} \
     && dotnet tool install --tool-path ${DOTNET_TOOLS} dotnet-ef
-ENV PATH="${PATH}:${DOTNET_TOOLS}"
+ENV PATH="${PATH}:${DOTNET_TOOLS}:/home/runner/.dotnet/tools"
 
 # Install js-yaml for YAML validation
 RUN npm install -g js-yaml
