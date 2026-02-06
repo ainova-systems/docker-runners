@@ -9,18 +9,19 @@ echo "AI Automation Runner v1.1"
 echo "=========================================="
 
 # Validate required environment variables
-if [ -z "$GITHUB_REPOSITORY_URL" ]; then
-    echo "ERROR: GITHUB_REPOSITORY_URL is required"
-    echo "Example: https://github.com/your-org/your-repo"
-    exit 1
-fi
-
-# Note: GITHUB_RUNNER_TOKEN is only required for initial setup
+# GITHUB_REPOSITORY_URL and GITHUB_RUNNER_TOKEN are only required for initial setup
 # After first run, credentials are persisted in volumes
-if [ -z "$GITHUB_RUNNER_TOKEN" ] && [ ! -f ".credentials" ]; then
-    echo "ERROR: GITHUB_RUNNER_TOKEN is required for initial configuration"
-    echo "Get it from: Repository -> Settings -> Actions -> Runners -> New self-hosted runner"
-    exit 1
+if [ ! -f ".credentials" ]; then
+    if [ -z "$GITHUB_REPOSITORY_URL" ]; then
+        echo "ERROR: GITHUB_REPOSITORY_URL is required for initial configuration"
+        echo "Example: https://github.com/your-org/your-repo"
+        exit 1
+    fi
+    if [ -z "$GITHUB_RUNNER_TOKEN" ]; then
+        echo "ERROR: GITHUB_RUNNER_TOKEN is required for initial configuration"
+        echo "Get it from: Repository -> Settings -> Actions -> Runners -> New self-hosted runner"
+        exit 1
+    fi
 fi
 
 # Check for authentication
@@ -54,9 +55,10 @@ LABELS=${RUNNER_LABELS:-"self-hosted,claude-cli,cursor-agent"}
 
 echo ""
 echo "Configuration:"
-echo "  Repository URL: $GITHUB_REPOSITORY_URL"
+[ -n "$GITHUB_REPOSITORY_URL" ] && echo "  Repository URL: $GITHUB_REPOSITORY_URL"
 echo "  Runner Name:    $RUNNER_NAME"
 echo "  Labels:         $LABELS"
+[ -f ".credentials" ] && echo "  Status:         Configured (using persisted credentials)"
 echo ""
 
 # Check if runner is already configured with valid credentials
