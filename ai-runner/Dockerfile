@@ -18,6 +18,11 @@ LABEL org.opencontainers.image.description="GitHub Actions self-hosted runner wi
 # Switch to root for installations
 USER root
 
+# Install yq (YAML processor)
+RUN wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 \
+    && chmod +x /usr/local/bin/yq \
+    && yq --version
+
 # Install Claude CLI globally
 RUN npm install -g @anthropic-ai/claude-code
 
