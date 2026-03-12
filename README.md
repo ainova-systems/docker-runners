@@ -13,6 +13,7 @@ Pre-built, production-ready **GitHub Actions self-hosted runners** in Docker con
 | [**ai-runner**](ai-runner/) | AI automation with Claude CLI & Cursor CLI | `ghcr.io/ainova-systems/docker-runners/ai-runner` |
 | [**build-runner**](build-runner/) | Builds & tests without Docker socket | `ghcr.io/ainova-systems/docker-runners/build-runner` |
 | [**docker-runner**](docker-runner/) | CI/CD with Docker CLI for container builds | `ghcr.io/ainova-systems/docker-runners/docker-runner` |
+| [**test-runner**](test-runner/) | E2E testing with Playwright & Chromium | `ghcr.io/ainova-systems/docker-runners/test-runner` |
 
 ## 🚀 Quick Start
 
@@ -134,10 +135,10 @@ git push origin main
          ▲                    ▲                    ▲
          │                    │                    │
     ┌────┴────┐         ┌─────┴─────┐        ┌────┴─────┐
-    │ai-runner│         │build-runner│       │docker-runner│
-    │Claude   │         │Labels only │       │Docker CLI │
-    │Cursor   │         │No socket   │       │Compose    │
-    └─────────┘         └───────────┘        └───────────┘
+    │ai-runner│         │build-runner│       │docker-runner│    │test-runner│
+    │Claude   │         │Labels only │       │Docker CLI │    │Playwright │
+    │Cursor   │         │No socket   │       │Compose    │    │Chromium   │
+    └─────────┘         └───────────┘        └───────────┘    └───────────┘
 ```
 
 ### Why "Heavy Base"?
@@ -200,6 +201,11 @@ docker-runners/
 │   ├── entrypoint.sh
 │   ├── docker-compose.yml     # With Docker socket mount
 │   └── .env.example
+├── test-runner/               # E2E browser testing
+│   ├── Dockerfile             # + Playwright, Chromium
+│   ├── entrypoint.sh
+│   ├── docker-compose.yml     # Local development
+│   └── .env.example
 └── README.md
 ```
 
@@ -211,7 +217,8 @@ The CI pipeline builds images in dependency order:
 2. **ai-runner changes** → Rebuild only ai-runner
 3. **build-runner changes** → Rebuild only build-runner
 4. **docker-runner changes** → Rebuild only docker-runner
-5. **Manual trigger** → Force rebuild all
+5. **test-runner changes** → Rebuild only test-runner
+6. **Manual trigger** → Force rebuild all
 
 ## 📋 Common Commands
 
