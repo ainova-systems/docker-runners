@@ -29,9 +29,9 @@ RUN npm install -g @anthropic-ai/claude-code
 # Add runner to docker group (for optional Docker access)
 RUN usermod -aG docker runner || true
 
-# Copy entrypoint script (overrides base)
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Copy pre-start hook
+COPY pre-start.sh /pre-start.sh
+RUN chmod +x /pre-start.sh
 
 # Switch to runner user
 USER runner
@@ -48,7 +48,7 @@ ENV PATH="/home/runner/.local/bin:${PATH}"
 
 WORKDIR /home/runner/actions-runner
 
-# Default labels for AI automation
+# Default labels, banner, and pre-start hook
 ENV RUNNER_LABELS=self-hosted,claude-cli,cursor-agent
-
-ENTRYPOINT ["/entrypoint.sh"]
+ENV RUNNER_BANNER="AI Automation Runner v1.1"
+ENV RUNNER_PRE_START=/pre-start.sh

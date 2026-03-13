@@ -28,16 +28,11 @@ RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /
 RUN groupadd -f docker \
     && usermod -aG docker runner
 
-# Copy entrypoint script (overrides base)
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 # Switch to runner user
 USER runner
 WORKDIR /home/runner/actions-runner
 
-# Default labels for Docker runner
+# Default labels and banner
 ENV RUNNER_LABELS=self-hosted,docker,dotnet,nodejs
-
-ENTRYPOINT ["/entrypoint.sh"]
+ENV RUNNER_BANNER="Docker Runner v1.1 — Tech Stack: .NET 10, Node.js 24, Docker"
 

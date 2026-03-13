@@ -15,7 +15,6 @@ LABEL org.opencontainers.image.description="GitHub Actions self-hosted runner fo
 
 # No additional installations needed - base-runner has Node.js, .NET, gh CLI
 
-# Default labels for build runner
+# Default labels and banner
 ENV RUNNER_LABELS=self-hosted,build,dotnet,nodejs
-
-ENTRYPOINT ["/entrypoint.sh"]
+ENV RUNNER_BANNER="Build Runner v1.1 — Tech Stack: .NET 10, Node.js 24"

@@ -1,40 +1,61 @@
 #!/bin/bash
 set -e
 
+# Runner banner - child images can override RUNNER_BANNER env
 echo "=========================================="
-echo "GitHub Actions Self-Hosted Runner"
+echo "${RUNNER_BANNER:-GitHub Actions Self-Hosted Runner}"
 echo "=========================================="
 
 # Validate required environment variables
-if [ -z "$GITHUB_REPOSITORY_URL" ]; then
-    echo "ERROR: GITHUB_REPOSITORY_URL is required"
-    echo "Example: https://github.com/your-org/your-repo"
-    exit 1
+# GITHUB_REPOSITORY_URL and GITHUB_RUNNER_TOKEN are only required for initial setup
+# After first run, credentials are persisted in volumes
+if [ ! -f ".credentials" ]; then
+    if [ -z "$GITHUB_REPOSITORY_URL" ]; then
+        echo "ERROR: GITHUB_REPOSITORY_URL is required for initial configuration"
+        echo "Example: https://github.com/your-org/your-repo"
+        exit 1
+    fi
+    if [ -z "$GITHUB_RUNNER_TOKEN" ]; then
+        echo "ERROR: GITHUB_RUNNER_TOKEN is required for initial configuration"
+        echo "Get it from: Repository -> Settings -> Actions -> Runners -> New self-hosted runner"
+        exit 1
+    fi
 fi
 
-if [ -z "$GITHUB_RUNNER_TOKEN" ] && [ ! -f ".credentials" ]; then
-    echo "ERROR: GITHUB_RUNNER_TOKEN is required for initial configuration"
-    echo "Get it from: Repository -> Settings -> Actions -> Runners -> New self-hosted runner"
-    exit 1
-fi
-
-# Set runner name (can be overridden via RUNNER_NAME env var)
+# Set runner name
 RUNNER_NAME=${RUNNER_NAME:-"runner-$(hostname)"}
 
-# Set runner labels (can be overridden via RUNNER_LABELS env var)
+# Set runner labels
 LABELS=${RUNNER_LABELS:-"self-hosted"}
 
 echo ""
 echo "Configuration:"
-echo "  Repository: $GITHUB_REPOSITORY_URL"
-echo "  Runner Name: $RUNNER_NAME"
-echo "  Labels: $LABELS"
+[ -n "$GITHUB_REPOSITORY_URL" ] && echo "  Repository:   $GITHUB_REPOSITORY_URL"
+echo "  Runner Name:  $RUNNER_NAME"
+echo "  Labels:       $LABELS"
+[ -f ".credentials" ] && echo "  Status:       Configured (using persisted credentials)"
 echo ""
 
-# Configure runner if not already configured
-if [ ! -f ".runner" ]; then
-    echo "Configuring runner for first time..."
-    
+# Check if runner is already configured with valid credentials
+if [ -f ".runner" ] && [ -f ".credentials" ]; then
+    echo "Runner already configured, reusing existing configuration..."
+    echo "To force reconfiguration, remove the runner-config volumes"
+else
+    # Validate token is provided for new configuration
+    if [ -z "$GITHUB_RUNNER_TOKEN" ]; then
+        echo "ERROR: GITHUB_RUNNER_TOKEN is required for initial configuration"
+        echo "Get it from: Repository -> Settings -> Actions -> Runners -> New self-hosted runner"
+        exit 1
+    fi
+
+    # Remove partial configuration if exists
+    if [ -f ".runner" ]; then
+        echo "Removing incomplete configuration..."
+        ./config.sh remove --token "$GITHUB_RUNNER_TOKEN" || true
+    fi
+
+    # Configure the runner
+    echo "Configuring runner..."
     ./config.sh \
         --url "$GITHUB_REPOSITORY_URL" \
         --token "$GITHUB_RUNNER_TOKEN" \
@@ -42,10 +63,15 @@ if [ ! -f ".runner" ]; then
         --labels "$LABELS" \
         --unattended \
         --replace
-    
-    echo "Runner configured successfully"
-else
-    echo "Runner already configured, using existing configuration"
+
+    echo ""
+    echo "Runner configured successfully!"
+fi
+
+# Run pre-start hook if defined by child image
+if [ -n "$RUNNER_PRE_START" ] && [ -f "$RUNNER_PRE_START" ]; then
+    echo ""
+    source "$RUNNER_PRE_START"
 fi
 
 echo ""
@@ -53,11 +79,12 @@ echo "=========================================="
 echo "Starting GitHub Actions Runner..."
 echo "=========================================="
 
-# Cleanup function
+# Cleanup function - don't remove runner on shutdown to allow restarts
+# without needing a new token. To fully unregister, use:
+# ./config.sh remove --token <token>
 cleanup() {
     echo ""
-    echo "Received shutdown signal, removing runner..."
-    ./config.sh remove --token "$GITHUB_RUNNER_TOKEN" || true
+    echo "Shutting down runner..."
 }
 
 trap cleanup SIGTERM SIGINT
