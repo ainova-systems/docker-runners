@@ -92,5 +92,6 @@ USER runner
 WORKDIR /home/runner/actions-runner
 
 ENV RUNNER_ALLOW_RUNASROOT=false
+ENV PLAYWRIGHT_BROWSERS_PATH=/home/runner/actions-runner/.pw-browsers
 
 ENTRYPOINT ["/entrypoint.sh"]
