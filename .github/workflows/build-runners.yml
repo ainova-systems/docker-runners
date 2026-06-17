@@ -16,6 +16,15 @@ on:
       - 'docker-runner/**'
       - 'test-runner/**'
       - '.github/workflows/build-runners.yml'
+  schedule:
+    # Nightly rebuild so the runner images track the newest agent CLIs:
+    # claude-code (npm) and cursor-agent (installer) both resolve to "latest" at
+    # build time, then freeze into the image. Scheduled runs build with no-cache
+    # (see each build step) so the CLI install layers actually re-fetch, and they
+    # publish the :latest tag (see the metadata tags) so deployments that track
+    # :latest — and Watchtower watching it — pick up the refreshed CLIs without a
+    # new release. Released versions still own the semver tags.
+    - cron: '0 3 * * *'
   release:
     types: [published]
   workflow_dispatch:
@@ -72,7 +81,8 @@ jobs:
     needs: [changes]
     if: |
       always() &&
-      (github.event_name == 'release' ||
+      (github.event_name == 'schedule' ||
+       github.event_name == 'release' ||
        (github.event_name == 'workflow_dispatch' && inputs.force_build_all == true) ||
        needs.changes.outputs.base-runner == 'true')
     permissions:
@@ -102,7 +112,7 @@ jobs:
         images: ${{ env.IMAGE_PREFIX }}/base-runner
         tags: |
           # Release: v1.2.3 → latest, 1, 1.2, 1.2.3
-          type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+          type=raw,value=latest,enable=${{ github.event_name == 'release' || github.event_name == 'schedule' }}
           type=semver,pattern={{major}},enable=${{ github.event_name == 'release' }}
           type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
           type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
@@ -119,6 +129,10 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        # Nightly scheduled runs build from scratch so the agent-CLI install
+        # layers re-fetch the newest claude-code / cursor-agent; push/release
+        # and manual builds keep the fast cached path.
+        no-cache: ${{ github.event_name == 'schedule' }}
 
     - name: Extract main tag
       id: main_tag
@@ -146,7 +160,8 @@ jobs:
     needs: [changes, build-base-runner]
     if: |
       always() &&
-      (github.event_name == 'release' ||
+      (github.event_name == 'schedule' ||
+       github.event_name == 'release' ||
        (github.event_name == 'workflow_dispatch' && inputs.force_build_all == true) ||
        needs.changes.outputs.ai-runner == 'true' ||
        needs.changes.outputs.base-runner == 'true') &&
@@ -177,7 +192,7 @@ jobs:
       with:
         images: ${{ env.IMAGE_PREFIX }}/ai-runner
         tags: |
-          type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+          type=raw,value=latest,enable=${{ github.event_name == 'release' || github.event_name == 'schedule' }}
           type=semver,pattern={{major}},enable=${{ github.event_name == 'release' }}
           type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
           type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
@@ -204,6 +219,10 @@ jobs:
           BASE_IMAGE=${{ env.IMAGE_PREFIX }}/base-runner:${{ steps.base-tag.outputs.tag }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        # Nightly scheduled runs build from scratch so the agent-CLI install
+        # layers re-fetch the newest claude-code / cursor-agent; push/release
+        # and manual builds keep the fast cached path.
+        no-cache: ${{ github.event_name == 'schedule' }}
 
     - name: Extract main tag
       id: main_tag
@@ -215,7 +234,8 @@ jobs:
     needs: [changes, build-base-runner]
     if: |
       always() &&
-      (github.event_name == 'release' ||
+      (github.event_name == 'schedule' ||
+       github.event_name == 'release' ||
        (github.event_name == 'workflow_dispatch' && inputs.force_build_all == true) ||
        needs.changes.outputs.build-runner == 'true' ||
        needs.changes.outputs.base-runner == 'true') &&
@@ -246,7 +266,7 @@ jobs:
       with:
         images: ${{ env.IMAGE_PREFIX }}/build-runner
         tags: |
-          type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+          type=raw,value=latest,enable=${{ github.event_name == 'release' || github.event_name == 'schedule' }}
           type=semver,pattern={{major}},enable=${{ github.event_name == 'release' }}
           type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
           type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
@@ -273,6 +293,10 @@ jobs:
           BASE_IMAGE=${{ env.IMAGE_PREFIX }}/base-runner:${{ steps.base-tag.outputs.tag }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        # Nightly scheduled runs build from scratch so the agent-CLI install
+        # layers re-fetch the newest claude-code / cursor-agent; push/release
+        # and manual builds keep the fast cached path.
+        no-cache: ${{ github.event_name == 'schedule' }}
 
     - name: Extract main tag
       id: main_tag
@@ -284,7 +308,8 @@ jobs:
     needs: [changes, build-base-runner]
     if: |
       always() &&
-      (github.event_name == 'release' ||
+      (github.event_name == 'schedule' ||
+       github.event_name == 'release' ||
        (github.event_name == 'workflow_dispatch' && inputs.force_build_all == true) ||
        needs.changes.outputs.docker-runner == 'true' ||
        needs.changes.outputs.base-runner == 'true') &&
@@ -315,7 +340,7 @@ jobs:
       with:
         images: ${{ env.IMAGE_PREFIX }}/docker-runner
         tags: |
-          type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+          type=raw,value=latest,enable=${{ github.event_name == 'release' || github.event_name == 'schedule' }}
           type=semver,pattern={{major}},enable=${{ github.event_name == 'release' }}
           type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
           type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
@@ -342,6 +367,10 @@ jobs:
           BASE_IMAGE=${{ env.IMAGE_PREFIX }}/base-runner:${{ steps.base-tag.outputs.tag }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        # Nightly scheduled runs build from scratch so the agent-CLI install
+        # layers re-fetch the newest claude-code / cursor-agent; push/release
+        # and manual builds keep the fast cached path.
+        no-cache: ${{ github.event_name == 'schedule' }}
 
     - name: Extract main tag
       id: main_tag
@@ -353,7 +382,8 @@ jobs:
     needs: [changes, build-base-runner]
     if: |
       always() &&
-      (github.event_name == 'release' ||
+      (github.event_name == 'schedule' ||
+       github.event_name == 'release' ||
        (github.event_name == 'workflow_dispatch' && inputs.force_build_all == true) ||
        needs.changes.outputs.test-runner == 'true' ||
        needs.changes.outputs.base-runner == 'true') &&
@@ -384,7 +414,7 @@ jobs:
       with:
         images: ${{ env.IMAGE_PREFIX }}/test-runner
         tags: |
-          type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+          type=raw,value=latest,enable=${{ github.event_name == 'release' || github.event_name == 'schedule' }}
           type=semver,pattern={{major}},enable=${{ github.event_name == 'release' }}
           type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
           type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
@@ -411,6 +441,10 @@ jobs:
           BASE_IMAGE=${{ env.IMAGE_PREFIX }}/base-runner:${{ steps.base-tag.outputs.tag }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        # Nightly scheduled runs build from scratch so the agent-CLI install
+        # layers re-fetch the newest claude-code / cursor-agent; push/release
+        # and manual builds keep the fast cached path.
+        no-cache: ${{ github.event_name == 'schedule' }}
 
     - name: Extract main tag
       id: main_tag

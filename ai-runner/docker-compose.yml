@@ -34,9 +34,31 @@ services:
       # Optional: Custom runner name and labels
       - RUNNER_NAME=${RUNNER_NAME:-ai-runner}
       - RUNNER_LABELS=${RUNNER_LABELS:-self-hosted,claude-cli,cursor-cli}
+    labels:
+      # Let Watchtower (below) auto-update only this container.
+      - com.centurylinklabs.watchtower.enable=true
     volumes:
       # Persist entire runner directory (config + work)
       - runner-data:/home/runner/actions-runner
+    networks:
+      - ai-runner-network
+
+  # Auto-redeploy. Pulls the nightly-rebuilt ai-runner:latest (see
+  # build-runners.yml `schedule:`) and recreates the runner so the bundled
+  # claude-code / cursor-agent CLIs stay current. `--label-enable` scopes it to
+  # the ai-runner container only; the daily `--schedule` fires after the CI
+  # build+push window (CI cron is 03:00 UTC), so a runner is recreated at most
+  # once/day — if that lands mid-job, GitHub re-queues the interrupted job.
+  # Only effective on the prebuilt-image (production) path: switch the ai-runner
+  # service to the `image: ghcr.io/...ai-runner:latest` line above (Watchtower
+  # cannot update a locally-built `ai-runner:local`).
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: ai-runner-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --label-enable --cleanup --schedule "0 0 4 * * *"
     networks:
       - ai-runner-network
 
