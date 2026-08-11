@@ -53,12 +53,25 @@ RUN mkdir -p /etc/apt/keyrings \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
+# Create runner user
+# Created before the .NET install so that install can hand the directory over in
+# the same layer: a later `chown -R` would copy the whole SDK into a new layer.
+RUN useradd -m -s /bin/bash runner \
+    && echo "runner ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/runner \
+    && chmod 0440 /etc/sudoers.d/runner \
+    && visudo -c -f /etc/sudoers.d/runner
+
 # Install .NET SDK
+# `runner` owns the install directory because `--channel 10.0` floats: the moment
+# Microsoft ships a patch newer than the one baked here, actions/setup-dotnet
+# installs it into this directory as the unprivileged runner, and a root-owned
+# directory fails the job in `Setup .NET` before anything is compiled.
 RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh \
     && chmod +x dotnet-install.sh \
     && ./dotnet-install.sh --channel ${DOTNET_VERSION} --install-dir /usr/share/dotnet \
     && rm dotnet-install.sh \
-    && ln -sf /usr/share/dotnet/dotnet /usr/bin/dotnet
+    && ln -sf /usr/share/dotnet/dotnet /usr/bin/dotnet \
+    && chown -R runner:runner /usr/share/dotnet
 
 # Install .NET EF Core tools globally (accessible to all users)
 ENV DOTNET_TOOLS=/opt/dotnet-tools
@@ -68,10 +81,6 @@ ENV PATH="${PATH}:${DOTNET_TOOLS}:/home/runner/.dotnet/tools"
 
 # Install js-yaml for YAML validation
 RUN npm install -g js-yaml
-
-# Create runner user
-RUN useradd -m -s /bin/bash runner \
-    && echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Setup GitHub Actions runner
 WORKDIR /home/runner/actions-runner
@@ -90,6 +99,16 @@ RUN chmod +x /entrypoint.sh
 # Default user and workdir
 USER runner
 WORKDIR /home/runner/actions-runner
+
+# Guard, run as `runner`: creating a directory under these two paths is the exact
+# operation actions/setup-dotnet performs to add a patch, and the exact one that
+# failed. Asserted here so a regression fails the image build, not every CI job -
+# along with the `dotnet` symlink it resolves through and the sudoers drop-in.
+RUN mkdir /usr/share/dotnet/host/fxr/.write-check /usr/share/dotnet/shared/Microsoft.NETCore.App/.write-check \
+    && rmdir /usr/share/dotnet/host/fxr/.write-check /usr/share/dotnet/shared/Microsoft.NETCore.App/.write-check \
+    && test "$(command -v dotnet)" = /usr/bin/dotnet \
+    && dotnet --list-sdks \
+    && sudo -n true
 
 ENV RUNNER_ALLOW_RUNASROOT=false
 ENV PLAYWRIGHT_BROWSERS_PATH=/home/runner/actions-runner/.pw-browsers
