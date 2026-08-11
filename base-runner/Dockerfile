@@ -53,12 +53,23 @@ RUN mkdir -p /etc/apt/keyrings \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
+# Create runner user
+# Created before the .NET install so that install can hand the directory over in
+# the same layer: a later `chown -R` would copy the whole SDK into a new layer.
+RUN useradd -m -s /bin/bash runner \
+    && echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
 # Install .NET SDK
+# `runner` owns the install directory because `--channel 10.0` floats: the moment
+# Microsoft ships a patch newer than the one baked here, actions/setup-dotnet
+# installs it into this directory as the unprivileged runner, and a root-owned
+# directory fails the job in `Setup .NET` before anything is compiled.
 RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh \
     && chmod +x dotnet-install.sh \
     && ./dotnet-install.sh --channel ${DOTNET_VERSION} --install-dir /usr/share/dotnet \
     && rm dotnet-install.sh \
-    && ln -sf /usr/share/dotnet/dotnet /usr/bin/dotnet
+    && ln -sf /usr/share/dotnet/dotnet /usr/bin/dotnet \
+    && chown -R runner:runner /usr/share/dotnet
 
 # Install .NET EF Core tools globally (accessible to all users)
 ENV DOTNET_TOOLS=/opt/dotnet-tools
@@ -68,10 +79,6 @@ ENV PATH="${PATH}:${DOTNET_TOOLS}:/home/runner/.dotnet/tools"
 
 # Install js-yaml for YAML validation
 RUN npm install -g js-yaml
-
-# Create runner user
-RUN useradd -m -s /bin/bash runner \
-    && echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Setup GitHub Actions runner
 WORKDIR /home/runner/actions-runner
@@ -90,6 +97,12 @@ RUN chmod +x /entrypoint.sh
 # Default user and workdir
 USER runner
 WORKDIR /home/runner/actions-runner
+
+# Guard: these are the two directories actions/setup-dotnet writes a newer patch
+# into. Asserting them here fails the image build instead of every CI job.
+RUN test -w /usr/share/dotnet/host/fxr \
+    && test -w /usr/share/dotnet/shared/Microsoft.NETCore.App \
+    && dotnet --list-sdks
 
 ENV RUNNER_ALLOW_RUNASROOT=false
 ENV PLAYWRIGHT_BROWSERS_PATH=/home/runner/actions-runner/.pw-browsers
