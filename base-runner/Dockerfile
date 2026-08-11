@@ -57,7 +57,9 @@ RUN mkdir -p /etc/apt/keyrings \
 # Created before the .NET install so that install can hand the directory over in
 # the same layer: a later `chown -R` would copy the whole SDK into a new layer.
 RUN useradd -m -s /bin/bash runner \
-    && echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+    && echo "runner ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/runner \
+    && chmod 0440 /etc/sudoers.d/runner \
+    && visudo -c -f /etc/sudoers.d/runner
 
 # Install .NET SDK
 # `runner` owns the install directory because `--channel 10.0` floats: the moment
@@ -98,11 +100,15 @@ RUN chmod +x /entrypoint.sh
 USER runner
 WORKDIR /home/runner/actions-runner
 
-# Guard: these are the two directories actions/setup-dotnet writes a newer patch
-# into. Asserting them here fails the image build instead of every CI job.
-RUN test -w /usr/share/dotnet/host/fxr \
-    && test -w /usr/share/dotnet/shared/Microsoft.NETCore.App \
-    && dotnet --list-sdks
+# Guard, run as `runner`: creating a directory under these two paths is the exact
+# operation actions/setup-dotnet performs to add a patch, and the exact one that
+# failed. Asserted here so a regression fails the image build, not every CI job -
+# along with the `dotnet` symlink it resolves through and the sudoers drop-in.
+RUN mkdir /usr/share/dotnet/host/fxr/.write-check /usr/share/dotnet/shared/Microsoft.NETCore.App/.write-check \
+    && rmdir /usr/share/dotnet/host/fxr/.write-check /usr/share/dotnet/shared/Microsoft.NETCore.App/.write-check \
+    && test "$(command -v dotnet)" = /usr/bin/dotnet \
+    && dotnet --list-sdks \
+    && sudo -n true
 
 ENV RUNNER_ALLOW_RUNASROOT=false
 ENV PLAYWRIGHT_BROWSERS_PATH=/home/runner/actions-runner/.pw-browsers
