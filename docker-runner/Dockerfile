@@ -21,7 +21,7 @@ USER root
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null \
     && apt-get update \
-    && apt-get install -y docker-ce-cli docker-compose-plugin \
+    && apt-get install -y --no-install-recommends docker-ce-cli docker-compose-plugin libreoffice-core libreoffice-writer \
     && rm -rf /var/lib/apt/lists/*
 
 # Create docker group and add runner user
@@ -29,10 +29,13 @@ RUN groupadd -f docker \
     && usermod -aG docker runner
 
 # Switch to runner user
+COPY --chmod=755 tests/check-word-conversion.sh /usr/local/bin/check-word-conversion
 USER runner
 WORKDIR /home/runner/actions-runner
+
+# Exercise the binary Word import filter and writable profile as the actual job user.
+RUN check-word-conversion
 
 # Default labels and banner
 ENV RUNNER_LABELS=self-hosted,docker,dotnet,nodejs
 ENV RUNNER_BANNER="Docker Runner v1.1 — Tech Stack: .NET 10, Node.js 24, Docker"
-
