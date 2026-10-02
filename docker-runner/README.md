@@ -20,6 +20,11 @@ Extends [base-runner](../base-runner/) with:
 |------|---------|
 | Docker CLI | Build and manage containers |
 | Docker Compose | Multi-container orchestration |
+| LibreOffice Writer | Headless Word document conversion tests |
+
+The image build runs `check-word-conversion` as the non-root `runner` user. It creates a
+binary Word 97 document, converts it to DOCX with the Word import filter, and checks the
+output text. Run the same check in an existing container with `check-word-conversion`.
 
 **Inherited from base-runner:** Node.js 24, .NET 10, gh CLI, dotnet-ef
 
