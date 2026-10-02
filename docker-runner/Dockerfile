@@ -17,11 +17,11 @@ LABEL org.opencontainers.image.tech-stack="base-runner + Docker CLI"
 # Switch to root for installations
 USER root
 
-# Install Docker CLI + Compose plugin
+# Install Docker CLI and both plugins explicitly; Buildx is otherwise only recommended.
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null \
     && apt-get update \
-    && apt-get install -y --no-install-recommends docker-ce-cli docker-compose-plugin libreoffice-core libreoffice-writer \
+    && apt-get install -y --no-install-recommends docker-ce-cli docker-buildx-plugin docker-compose-plugin libreoffice-core libreoffice-writer \
     && rm -rf /var/lib/apt/lists/*
 
 # Create docker group and add runner user
@@ -33,8 +33,10 @@ COPY --chmod=755 tests/check-word-conversion.sh /usr/local/bin/check-word-conver
 USER runner
 WORKDIR /home/runner/actions-runner
 
-# Exercise the binary Word import filter and writable profile as the actual job user.
-RUN check-word-conversion
+# Check the job user's Docker plugins as well as real Word conversion.
+RUN docker buildx version \
+    && docker compose version \
+    && check-word-conversion
 
 # Default labels and banner
 ENV RUNNER_LABELS=self-hosted,docker,dotnet,nodejs

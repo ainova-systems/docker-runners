@@ -19,10 +19,12 @@ Extends [base-runner](../base-runner/) with:
 | Tool | Purpose |
 |------|---------|
 | Docker CLI | Build and manage containers |
+| Docker Buildx | BuildKit image builds |
 | Docker Compose | Multi-container orchestration |
 | LibreOffice Writer | Headless Word document conversion tests |
 
-The image build runs `check-word-conversion` as the non-root `runner` user. It creates a
+The image build checks `docker buildx version` and `docker compose version`, then runs
+`check-word-conversion` as the non-root `runner` user. It creates a
 binary Word 97 document, converts it to DOCX with the Word import filter, and checks the
 output text. Run the same check in an existing container with `check-word-conversion`.
 
